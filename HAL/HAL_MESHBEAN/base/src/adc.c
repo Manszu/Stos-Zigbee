@@ -43,7 +43,7 @@
 /******************************************************************************
   adc.c
 
-  ADC interface implementation.
+Implementacja interfejsu ADC
 ******************************************************************************/
 
 #include <avr/interrupt.h>
@@ -52,12 +52,12 @@
 
 #define NUM_ADC_CHANNELS 4
 
-enum
+enum 
 {  
-  ADC_IDLE,
-  ADC_BUSY,
-  ADC_FREE
-} ADC_state = ADC_IDLE;
+  ADC_IDLE, //stan 0 
+  ADC_BUSY, //stan 1
+  ADC_FREE //stan 2
+} ADC_state = ADC_IDLE; 
 
 uint8_t ui8ActiveChannel; //contains a number of active channel.
 
