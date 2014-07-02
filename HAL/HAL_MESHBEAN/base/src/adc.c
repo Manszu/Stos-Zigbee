@@ -61,11 +61,17 @@ enum
 
 uint8_t ui8ActiveChannel; //contains a number of active channel.
 
-typedef void (*ADC_callback)(uint16_t);
-ADC_callback ADC_callback_list[NUM_ADC_CHANNELS]; //callbacks array.
+typedef void (*ADC_callback)(uint16_t); //definicja typu void (*g) (uint16_t)
+/* int foo(int i){ return i + 1;} analogiczne
+
+typedef int (*g)(int);  // Declare typedef
+
+g func = &foo;          // Define function-pointer variable, and initialise */
+
+ADC_callback ADC_callback_list[NUM_ADC_CHANNELS]; //tablica wskaźników na funkcję
 
 /*******************************************************************************
-  Description: ADC initialization.
+  Description: Inicjalizacja ADC
 
   Parameters: nothing.
 
@@ -75,12 +81,12 @@ void adc_init(void)
 {  
   uint8_t i;
   for (i = 0; i < NUM_ADC_CHANNELS; i++) ADC_callback_list[i] = NULL;
-  // Disable Power Reduction ADC
-  PRR0 &= ~ (1 << PRADC);
-  ADMUX = HAL_ADC_REF_VOLTAGE_SOURCE;
+  PRR0 &= ~ (1 << PRADC); // wylaczenie redukcji energii
+  ADMUX = HAL_ADC_REF_VOLTAGE_SOURCE; //wpisz do rejestru ADMUX, ktory odpowiada za multiplexing kanalu ADC
+  // a takze za wybor napiecia odniesienia i sposob zapisu w rejestrach ADCH ADCL
   // ADC Enable, ADC Prescaler division factor = 32 (125KHz for CLK = 4MHz)
   ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS0);
-  ADC_state = ADC_FREE;
+  ADC_state = ADC_FREE; //stan ADC_wolny
 }
 
 /*******************************************************************************
@@ -94,19 +100,58 @@ void adc_init(void)
 *******************************************************************************/
 result_t adc_open(uint8_t adcNumber, void (*f)(uint16_t data))
 {
-  // ADC Number is out of range or 
-  // CALLBACK is not defined
-  if ((adcNumber >= NUM_ADC_CHANNELS) && (f == NULL))
+  
+  if ((adcNumber >= NUM_ADC_CHANNELS) && (f == NULL)) //numer kanału jest nie zdefiniowany i wskaznik na funkcje nieokreslony
     return FAIL;
-  // ADC Channel has been already opened
-  if (ADC_callback_list[adcNumber] != NULL)
-    return FAIL;
+  // kanał ADC jest juz otwarty
+  if (ADC_callback_list[adcNumber] != NULL)  
+  return FAIL;/* to samo co 
+  void evaluate(bool (*pFunc[])(), int n) {
+   for(int i = 0; i < n; i++)
+      pFunc[i]();
+} 
+  bool (*pFunc[n])();
+   pFunc[0] = funTrue;
+   pFunc[1] = funFalse;
+   evaluate(pFunc, n);  
+    
+    */
   // ADC initialization
-  if (ADC_state == ADC_IDLE) adc_init();
-  // Digital input disable
-  DIDR0 |= (1 << adcNumber);
+  if (ADC_state == ADC_IDLE) adc_init(); //inicjalizacja ADC, teraz stan FREE
+  // Digital input disable register
+  DIDR0 |= (1 << adcNumber); 
+  //DIDR0 is used to disable the digital input buffers on PC0 to PC5. When set, the corresponding PINC value will be set to 0.
   // Register callback
-  ADC_callback_list[adcNumber] = f;
+  ADC_callback_list[adcNumber] = f; // rejestracja callbacka - przypisanie funkcji f
+/* Przyklad rejestracji callbacka
+    #include <stdio.h>
+    #include <stddef.h>
+    #define CALLBACK_MAX 10
+    typedef void (*callback_t)(void);
+    static callback_t callbacks[CALLBACK_MAX];
+    static size_t n = 0;
+    void register_callback(callback_t callback)
+    {
+    if (n == CALLBACK_MAX)
+    return;
+    callbacks[n++] = callback;
+    }
+    void run_callbacks(void)
+    {
+    while (--n < (size_t)-1)
+    callbacks[n]();
+    }
+    void foo(void) { puts("foo!"); }
+    void bar(void) { puts("bar!"); }
+    void baz(void) { puts("baz!"); }
+    int main(void)
+    {
+    register_callback(&foo);
+    register_callback(&bar);
+    register_callback(&baz);
+    run_callbacks();
+    return 0;
+    } */
   return SUCCESS;
 }
 
