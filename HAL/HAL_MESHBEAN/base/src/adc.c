@@ -105,7 +105,7 @@ result_t adc_open(uint8_t adcNumber, void (*f)(uint16_t data))
     return FAIL;
   // kanał ADC jest juz otwarty
   if (ADC_callback_list[adcNumber] != NULL)  
-  return FAIL;/* to samo co 
+    return FAIL;/* to samo co 
   void evaluate(bool (*pFunc[])(), int n) {
    for(int i = 0; i < n; i++)
       pFunc[i]();
@@ -139,7 +139,7 @@ result_t adc_open(uint8_t adcNumber, void (*f)(uint16_t data))
     void run_callbacks(void)
     {
     while (--n < (size_t)-1)
-    callbacks[n]();
+    callbacks[n](); //uruchomienie callbacka
     }
     void foo(void) { puts("foo!"); }
     void bar(void) { puts("bar!"); }
@@ -180,8 +180,8 @@ result_t adc_get(uint8_t adcNumber)
   // Change ADC channel
   ADMUX = (ADMUX & 0xE0) | adcNumber;
   // Start one conversion
-  ADCSRA |= (1 << ADIE);
-  ADCSRA |= (1 << ADSC);
+  ADCSRA |= (1 << ADIE); // register kontrolny konwersji AC
+  ADCSRA |= (1 << ADSC); // początek konwersji
   return SUCCESS;
 }
 
@@ -209,8 +209,8 @@ result_t adc_close(uint8_t adcNumber)
   // ADC Disable (if all ADC channels are closed)
   if (i == NUM_ADC_CHANNELS) 
   {
-    ADCSRA &= ~(1 << ADEN);
-    // Enable Power Reduction ADC
+    ADCSRA &= ~(1 << ADEN); //instrukcja dla kontrolera, funkcje peryferyjne dla ADC wylaczam
+    // Wlacz redukcje energii
     PRR0 = (1 << PRADC);
     ADC_state = ADC_IDLE;
   }
